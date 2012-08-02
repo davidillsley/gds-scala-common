@@ -72,6 +72,8 @@ class MongoDatabaseManagerTests
 
     then("The status of the change script in the audit should be recorded as failed")
 
+    println(changeScriptThatThrowsAnException.name)
+
     databaseManager.changeScriptAuditFor(changeScriptThatThrowsAnException) match {
       case None => fail("Should have found an audit entry for " + changeScriptThatThrowsAnException.name)
       case Some(changeScriptAuditEntry) => changeScriptAuditEntry.status should be(ChangeScriptStatus.failed)

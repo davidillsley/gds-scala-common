@@ -127,10 +127,9 @@ abstract class MongoDatabaseManager extends ContainerEventListener with Logging 
   }
 
   class ChangeLogRepository(databaseManager: MongoDatabaseManager)
-    extends IdentityBasedMongoRepository[ChangeScriptAudit]
+    extends IdentityBasedMongoRepository[ChangeScriptAudit](databaseManager.apply("changelog"))
     with Logging {
 
-    protected val collection = databaseManager.apply("changelog")
     protected val databaseIdProperty = "name"
 
     override def deleteAll() {

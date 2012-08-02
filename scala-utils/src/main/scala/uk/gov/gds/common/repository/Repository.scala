@@ -14,7 +14,7 @@ trait Repository[A] {
 
   def load(ids: List[String]): Cursor[A]
 
-  def delete(id: String): Unit
+  def delete(query: DBObject): Unit
 
   def deleteAll(): Unit
 

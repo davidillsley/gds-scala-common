@@ -3,6 +3,7 @@ package uk.gov.gds.common.mongo.repository
 import com.novus.salat._
 import com.novus.salat.global.NoTypeHints
 import com.mongodb.casbah.Imports._
+import com.mongodb.WriteConcern
 import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
 import com.mongodb.casbah.MongoCollection
 import uk.gov.gds.common.logging.Logging
@@ -10,7 +11,7 @@ import uk.gov.gds.common.j2ee.ContainerEventListener
 import uk.gov.gds.common.pagination.PaginationSupport
 import uk.gov.gds.common.repository.{CursorBase, Repository}
 
-abstract class MongoRepositoryBase[A <: CaseClass](implicit m: Manifest[A])
+abstract class MongoRepositoryBase[A <: CaseClass](thisCollection: MongoCollection)(implicit m: Manifest[A])
   extends Repository[A]
   with Logging
   with ContainerEventListener
@@ -19,7 +20,7 @@ abstract class MongoRepositoryBase[A <: CaseClass](implicit m: Manifest[A])
 
   RegisterJodaTimeConversionHelpers()
 
-  protected val collection: MongoCollection
+  private val collection: MongoCollection = thisCollection
   protected implicit val ctx = NoTypeHints
   protected lazy val emptyQuery = MongoDBObject()
 
@@ -43,7 +44,7 @@ abstract class MongoRepositoryBase[A <: CaseClass](implicit m: Manifest[A])
   protected def addIndex(index: DBObject,
                          unique: Boolean = Enforced,
                          sparse: Boolean = Sparse,
-                         duplicate: Boolean = Keep ) {
+                         duplicate: Boolean = Keep) {
     logger.info("Adding index " + index)
 
     try {
@@ -63,6 +64,56 @@ abstract class MongoRepositoryBase[A <: CaseClass](implicit m: Manifest[A])
         throw e
     }
   }
+
+  def safeInsert(obj: A) = {
+    try {
+      insert(obj, WriteConcern.MAJORITY)
+    } catch {
+      case e: Exception => {
+        logger.error(e.getMessage)
+        throw e
+      }
+    }
+  }
+
+  def unsafeInsert(obj: A) = insert(obj, WriteConcern.NORMAL)
+
+  private def insert(obj: A, writeConcern: WriteConcern) = {
+    val query = domainObj2mongoObj(obj)
+    collection.insert(query, writeConcern)
+    grater[A].asObject(query)
+  }
+
+  def safeUpdate(query: DBObject, obj: DBObject, upsert: Boolean = true, multi: Boolean = false) = {
+    try {
+      collection.update(query, obj, upsert, multi, WriteConcern.MAJORITY)
+    } catch {
+      case e: Exception => {
+        logger.error(e.getMessage)
+        throw e
+      }
+    }
+  }
+
+  def unsafeUpdate(query: DBObject, obj: DBObject, upsert: Boolean = true, multi: Boolean = false) = collection.update(query, obj, upsert, multi, WriteConcern.NORMAL)
+
+  private def update(query: DBObject, obj: DBObject, upsert: Boolean = true, multi: Boolean = false, writeConcern: WriteConcern) = collection.update(query, obj, upsert, multi, writeConcern)
+
+  def findOne(filter: DBObject) = collection.findOne(filter)
+
+  def load(id: String) = collection.findOne(where("_id" -> oid(id)))
+
+  def load(ids: List[String]) = SimpleMongoCursor(where("_id" -> inOids(ids)))
+
+  def delete(query: DBObject) {
+    collection.remove(query)
+  }
+
+  def deleteAll() {
+    collection.remove(query())
+  }
+
+  def all = SimpleMongoCursor()
 
   protected class SimpleMongoCursor(query: DBObject,
                                     pageSize: Int,

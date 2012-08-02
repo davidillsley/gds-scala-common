@@ -352,9 +352,7 @@ object SimpleTestDataManagerForCursorTests extends MongoDatabaseManager {
 
 private[repository] case class Data(key: Int, value: String)
 
-private[repository] object TestDataRepository extends SimpleMongoRepository[Data] {
-
-  lazy val collection = MongoDatabaseManagerForTests("testData")
+private[repository] object TestDataRepository extends MongoRepositoryBase[Data](MongoDatabaseManagerForTests("testData")) {
 
   def sorted = SimpleMongoCursor(emptyQuery, order("key" -> Ascending.order))
 
@@ -368,8 +366,8 @@ private[repository] case class DataWithTimestampField(name: String, dateOfBirth:
 
 private[repository] case class DataWithTimestampFieldAndSecondColumn(name: String, otherName: String, dateOfBirth: DateTime) extends HasTimestamp
 
-private[repository] object TestDateDataRepository extends TimestampBasedMongoRepository[DataWithTimestampField] {
-  lazy val collection = MongoDatabaseManagerForTests("testDateData")
+private[repository] object TestDateDataRepository extends TimestampBasedMongoRepository[DataWithTimestampField](MongoDatabaseManagerForTests("testDateData")) {
+
   lazy val now = new DateTime
   val databaseTimeStampProperty = "dateOfBirth"
 
@@ -381,8 +379,7 @@ private[repository] object TestDateDataRepository extends TimestampBasedMongoRep
 
 }
 
-private[repository] object Test2ColumnDateDataRepository extends TimestampBasedMongoRepository[DataWithTimestampFieldAndSecondColumn] {
-  lazy val collection = MongoDatabaseManagerForTests("testDateDataTwoColumn")
+private[repository] object Test2ColumnDateDataRepository extends TimestampBasedMongoRepository[DataWithTimestampFieldAndSecondColumn](MongoDatabaseManagerForTests("testDateDataTwoColumn")) {
   lazy val now = new DateTime
   val databaseTimeStampProperty = "dateOfBirth"
 

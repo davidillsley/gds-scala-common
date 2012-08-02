@@ -2,7 +2,7 @@ package uk.gov.gds.common.repository
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import uk.gov.gds.common.mongo.{MongoDatabaseManager, MongoDatabaseManagerForTests}
+import uk.gov.gds.common.mongo.MongoDatabaseManager
 import uk.gov.gds.common.mongo.repository._
 import uk.gov.gds.common.testutil.MongoDatabaseBackedTest
 import com.novus.salat.annotations._
@@ -20,7 +20,6 @@ with SyntacticSugarForMongoQueries {
   test("Should create amongo id on inserting a new row") {
     SimpleTestDataRepository.safeInsert(SimpleTestData(key = 1, value = "test-2")).id should not be(None)
   }
-
 
   test("Should be able to query for data retrieveing an object of the correct type") {
     SimpleTestDataRepository.createItems(1)
@@ -75,9 +74,7 @@ object SimpleTestDataManagerForTests extends MongoDatabaseManager {
 
 case class SimpleTestData(@Key("_id") id: Option[ObjectId] = None, key: Int, value: String)
 
-object SimpleTestDataRepository extends SimpleMongoRepository[SimpleTestData] {
-
-  lazy val collection = MongoDatabaseManagerForTests("testFindData")
+object SimpleTestDataRepository extends MongoRepositoryBase[SimpleTestData](SimpleTestDataManagerForTests("testFindData")) {
 
   override protected def createIndexes() {
     addIndex(index("value" -> Ascending), unique = Enforced, sparse = Complete)

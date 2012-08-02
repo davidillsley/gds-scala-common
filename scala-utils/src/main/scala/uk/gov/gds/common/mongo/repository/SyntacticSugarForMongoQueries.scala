@@ -3,10 +3,6 @@ package uk.gov.gds.common.mongo.repository
 import com.mongodb.casbah.commons.MongoDBObject.{newBuilder => build}
 import org.bson.types.ObjectId
 
-sealed abstract class Order(val order: Int)
-
-case object Ascending extends Order(1)
-
 case object Descending extends Order(-1)
 
 sealed abstract class IndexType(val index: Boolean)
@@ -26,7 +22,6 @@ sealed abstract class Duplicate(val duplicate: Boolean)
 case object Drop extends Duplicate(true)
 
 case object Keep extends Duplicate(false)
-
 
 
 trait SyntacticSugarForMongoQueries {
@@ -61,3 +56,7 @@ trait SyntacticSugarForMongoQueries {
   @inline protected def index(t: (String, Int)*) = (build[String, Int] ++= t).result
 
 }
+
+sealed abstract class Order(val order: Int)
+
+case object Ascending extends Order(1)
