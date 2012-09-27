@@ -12,3 +12,9 @@ node_modules/*
 .DS_Store
 version.conf
 .idea_modules/*
+*/.project
+*/.classpath
+*/.cache
+*/.settings
+*/bin
+*/.target
