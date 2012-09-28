@@ -11,7 +11,7 @@ for(var i=0; i<status.members.length; i++) {
 if(primary.length > 0) {
     var conn = new Mongo(primary);
     var adminDb = conn.getDB("admin");
-    /* var initialAuth = adminDb.auth("admin","admin"); */
+    var initialAuth = adminDb.auth("admin","admin");
 
     if(initialAuth === 0) {
         adminDb.addUser("admin","admin");
