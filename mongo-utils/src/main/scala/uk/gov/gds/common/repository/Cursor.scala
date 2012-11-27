@@ -1,6 +1,7 @@
 package uk.gov.gds.common.repository
 
 import uk.gov.gds.common.logging.Logging
+import scala.collection.immutable.Stream
 
 trait Cursor[A] {
   def pageOfData: List[A]
@@ -20,10 +21,12 @@ trait Cursor[A] {
   def map[B](f: (A) => B): Seq[B]
 
   def toList: List[A]
+  
+  def toStream: Stream[A]
 }
 
 abstract class CursorBase[A](var pageSize: Int,
-  var currentPage: Long)
+                             var currentPage: Long)
   extends Cursor[A] with Logging {
 
   def pages = math.ceil(total.toDouble / pageSize.toDouble).toInt
@@ -48,6 +51,8 @@ abstract class CursorBase[A](var pageSize: Int,
   }.flatten
 
   def toList: List[A] = map(x => x).toList
+  
+  def toStream: Stream[A] = stream(this)
 
   protected def skipSize = ((currentPage - 1) * pageSize).toInt
 
@@ -60,6 +65,14 @@ abstract class CursorBase[A](var pageSize: Int,
   }
 
   private def advanceToNextPage() = if (hasNextPage) gotoNextPage()
+  
+  private def stream[A](cursor: Cursor[A]): Stream[A] =
+    cursor.pageOfData.toStream #::: (if (cursor.hasNextPage) {
+      cursor.gotoNextPage
+      stream(cursor)
+    } else {
+      Stream.empty
+    })
 }
 
 class EndOfCursorException extends RuntimeException

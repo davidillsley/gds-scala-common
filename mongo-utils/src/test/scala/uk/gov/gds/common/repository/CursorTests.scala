@@ -38,6 +38,56 @@ class CursorTests
     list.size should be(5)
     list should be(items)
   }
+  
+  
+  class SimpleTestMongoCursor(
+    numPages: Int,
+    pageSize: Int)
+    extends CursorBase[Long](pageSize, 1) {
+
+    def pageOfData = ((currentPage - 1) * pageSize to (currentPage * pageSize) - 1).toList
+
+    def total = numPages * pageSize
+  }
+
+  test("A cursor can be converted to a lazily evaluated stream") {
+    given("A test cursor containing 75 items in pages of 15")
+    val cursor = new SimpleTestMongoCursor(5, 15)
+
+    val stream = cursor.toStream
+
+    when("we take 10 items")
+    val taken10 = stream.take(10).toList
+    then("we should have a list of (0 to 9) and a cursor on page 1")
+    taken10 should equal((0 to 9))
+    cursor.currentPage should be(1)
+
+    when("we take 20 items")
+    val taken20 = stream.take(20).toList
+    then("we should have a list of (0 to 19) and a cursor on page 1")
+    taken20 should equal((0 to 19))
+    cursor.currentPage should be(2)
+
+    when("we take 40 items")
+    val taken40 = stream.take(40).toList
+    then("we should have a list of (0 to 39) and a cursor on page 1")
+    taken40 should equal((0 to 39))
+    cursor.currentPage should be(3)
+    
+    when("we take 75 items")
+    val taken75 = stream.take(75).toList
+    then("we should have a list of (0 to 74) and a cursor on page 1")
+    taken75 should equal((0 to 74))
+    cursor.currentPage should be(5)
+    
+    
+    when("we take 80 items")
+    val taken80 = stream.take(80).toList
+    then("we should have a list of (0 to 74) and a cursor on page 1")
+    taken80 should equal((0 to 74))
+    cursor.currentPage should be(5)
+  }
+
 
   test("A cursor with fewer items than the page size returns the correct number of results") {
     given("A collection containing 5 items")
