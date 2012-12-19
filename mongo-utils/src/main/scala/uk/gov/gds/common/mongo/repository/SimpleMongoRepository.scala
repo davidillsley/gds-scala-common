@@ -23,7 +23,9 @@ abstract class SimpleMongoRepository[A <: CaseClass](implicit m: Manifest[A]) ex
   def updateWith(writeConcern: WriteConcern, query: DBObject, obj: DBObject, upsert: Boolean, multi: Boolean) =
     collection.update(query, obj, upsert, multi, writeConcern)
 
-  def find(f: (GdsFindQueryBuilder[A], A) => Unit) = whereQueryBuilder(f)
+  def findOne(query: FindQuery) = whereQueryBuilder(query).findOne
+
+  def findAll(query: FindQuery) = whereQueryBuilder(query).findAll
 
   def safeInsert(obj: A) = insertWith(safe, obj)
 
@@ -72,7 +74,11 @@ abstract class SimpleMongoRepository[A <: CaseClass](implicit m: Manifest[A]) ex
 
   protected def findAll(filter: DBObject): List[A] = collection.find(filter)
 
-  @inline protected final def whereQueryBuilder(f: (GdsFindQueryBuilder[A], A) => Unit) = GdsFindQueryBuilder(ModelProxyFactory.proxy[A]())
+  @inline private final def whereQueryBuilder(f: FindQuery) = {
+    val queryBuilder = GdsFindQueryBuilder(ModelProxyFactory.proxy[A]())
+    f(queryBuilder, queryBuilder.schema)
+    queryBuilder
+  }
 
   @inline private final def update(query: DBObject, obj: DBObject, upsert: Boolean = true, multi: Boolean = false, writeConcern: WriteConcern) =
     collection.update(query, obj, upsert, multi, writeConcern)

@@ -2,7 +2,6 @@ package uk.gov.gds.common.mongo.repository
 
 import net.sf.cglib.proxy._
 import java.lang.reflect.Method
-import net.sf.cglib.core.DefaultNamingPolicy
 import org.objenesis.ObjenesisStd
 import com.novus.salat.CaseClass
 import uk.gov.gds.common.logging.Logging
@@ -33,10 +32,9 @@ object ModelProxyFactory extends Logging {
 
     enhancer.setClassLoader(proxyType.getClassLoader) // TODO: Will this always work in all contexts?
     enhancer.setUseFactory(true)
-    enhancer.setSuperclass(proxyType) // Assuming that we're not proxying an interface here
+    enhancer.setSuperclass(proxyType)
     enhancer.setCallbackTypes(List(classOf[MethodInterceptor], classOf[NoOp]).toArray)
     enhancer.setCallbackFilter(ignoreBridgeMethods)
-    enhancer.setNamingPolicy(DefaultNamingPolicy.INSTANCE) // TODO: Do we need this?
 
     if (interfaces != Nil)
       enhancer.setInterfaces(interfaces.toArray)

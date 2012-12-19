@@ -26,13 +26,14 @@ class MongoQueryBuilderTest extends FunSuite with ShouldMatchers with GivenWhenT
 
     when("we attempt to update the item called foo")
 
-    repository.find {
+    val result = repository.findOne {
       (query, schema) =>
         query
           .eq(schema.name, "foo")
-          .eq(schema.value, 13)
+          .eq(schema.value, 1)
     }
   }
+
 
 
 }

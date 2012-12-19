@@ -2,14 +2,23 @@ package uk.gov.gds.common.mongo.repository
 
 import com.novus.salat.CaseClass
 
-class QueryPart
+trait MongoQueryExecutor[A] {
+  def findOne: Option[A]
 
-class GdsMongoQuery
+  def findAll: List[A]
 
-case class GdsFindQueryBuilder[A <: CaseClass](proxy: A) {
+  def getOne: A = findOne.get
+}
 
-  @inline final def eq[B](methodCall: B, value: B) = {
+
+case class GdsFindQueryBuilder[A <: CaseClass](schema: A) extends MongoQueryExecutor[A] {
+
+  def eq[B, B1 <: B](methodCall: B, value: B1) = {
+    // // //
     this
   }
 
+  def findOne: Option[A] = None
+
+  def findAll: List[A] = List.empty
 }
