@@ -2,7 +2,7 @@ package uk.gov.gds.common.mongo.repository
 
 import com.novus.salat._
 import com.mongodb.casbah.Imports._
-import com.mongodb.WriteConcern
+import com.mongodb.WriteConcern.{MAJORITY => safe, NORMAL => unsafe}
 
 abstract class SimpleMongoRepository[A <: CaseClass](implicit m: Manifest[A]) extends MongoRepositoryBase[A] {
 
@@ -16,77 +16,40 @@ abstract class SimpleMongoRepository[A <: CaseClass](implicit m: Manifest[A]) ex
 
   def get(id: ObjectId): A = load(id).getOrElse(throw new NoSuchObjectException(id))
 
-  def insertWith(writeConcern: WriteConcern, obj: A) = try {
-    insert(obj, writeConcern)
-  } catch {
-    case e: Exception => {
-      logger.error("insert with concern " + writeConcern.toString + " failed for " + obj, e)
-      throw e
-    }
-  }
+  def insertWith(writeConcern: WriteConcern, obj: A) = insert(obj, writeConcern)
 
-  def bulkInsertWith(writeConcern: WriteConcern, obj: List[A]) = try {
-    bulkInsert(obj, writeConcern)
-  } catch {
-    case e: Exception => {
-      logger.error("insert with concern " + writeConcern.toString + " failed for " + obj, e)
-      throw e
-    }
-  }
+  def bulkInsertWith(writeConcern: WriteConcern, obj: List[A]) = bulkInsert(obj, writeConcern)
 
-  def updateWith(writeConcern: WriteConcern, query: DBObject, obj: DBObject, upsert: Boolean, multi: Boolean) = {
-    try {
-      collection.update(query, obj, upsert, multi, writeConcern)
-    } catch {
-      case e: Exception => {
-        logger.error(e.getMessage)
-        throw e
-      }
-    }
-  }
+  def updateWith(writeConcern: WriteConcern, query: DBObject, obj: DBObject, upsert: Boolean, multi: Boolean) =
+    collection.update(query, obj, upsert, multi, writeConcern)
 
-  def safeInsert(obj: A) = insertWith(WriteConcern.MAJORITY, obj)
+  def find(f: (GdsFindQueryBuilder[A], A) => Unit) = whereQueryBuilder(f)
 
-  def unsafeInsert(obj: A) = insertWith(WriteConcern.NORMAL, obj)
+  def safeInsert(obj: A) = insertWith(safe, obj)
+
+  def unsafeInsert(obj: A) = insertWith(unsafe, obj)
 
   def safeUpdate(query: DBObject, obj: DBObject, upsert: Boolean = true, multi: Boolean = false) =
-    updateWith(WriteConcern.MAJORITY, query, obj, upsert, multi)
+    updateWith(safe, query, obj, upsert, multi)
 
   def unSafeUpdate(query: DBObject, obj: DBObject, upsert: Boolean = true, multi: Boolean = false) =
-    updateWith(WriteConcern.NORMAL, query, obj, upsert, multi)
+    updateWith(unsafe, query, obj, upsert, multi)
 
   def unsafeDelete(id: String) = unsafeDelete(where("_id" -> oid(id)))
 
   def safeDelete(id: String) = safeDelete(where("_id" -> oid(id)))
 
-  def unsafeDelete(query: DBObject) = try {
-    collection.remove(query, WriteConcern.NORMAL)
-  } catch {
-    case e =>
-      logger.error("unsafeDelete failed for %s".format(query.toString), e)
-      throw e
-  }
+  def unsafeDelete(query: DBObject) = collection.remove(query, unsafe)
 
-  def safeDelete(query: DBObject) = try {
-    collection.remove(query, WriteConcern.MAJORITY)
-  } catch {
-    case e =>
-      logger.error("unsafeDelete failed for %s".format(query.toString), e)
-      throw e
-  }
+  def safeDelete(query: DBObject) = collection.remove(query, safe)
 
   def deleteAll() {
     collection.remove(query())
   }
 
-  def findAndModify(query: DBObject, update: DBObject, returnNew: Boolean = false) = try {
+  def findAndModify(query: DBObject, update: DBObject, returnNew: Boolean = false) =
     collection.findAndModify(query = query, update = update, sort = null, fields = null, remove = false, returnNew = returnNew, upsert = false)
-  } catch {
-    case e =>
-      logger.error("findAndModify failed for %s %s".format(query.toString, update.toString), e)
-      throw e
-  }
-  
+
   def all = SimpleMongoCursor()
 
   def allFields = MongoDBObject.empty
@@ -99,8 +62,8 @@ abstract class SimpleMongoRepository[A <: CaseClass](implicit m: Manifest[A]) ex
 
   def field(fieldName: String, defaultValue: String = "") = values(fieldName -> defaultValue)
 
-  def addField(fieldName: String, defaultValue: String = "") = safeUpdate(allFields,
-    update("$set" -> field(fieldName, defaultValue)), false, true)
+  def addField(fieldName: String, defaultValue: String = "") =
+    safeUpdate(allFields, update("$set" -> field(fieldName, defaultValue)), false, true)
 
   def removeField(fieldName: String, defaultValue: String = "") = safeUpdate(allFields,
     update("$unset" -> field(fieldName, defaultValue)), false, true)
@@ -108,6 +71,8 @@ abstract class SimpleMongoRepository[A <: CaseClass](implicit m: Manifest[A]) ex
   def findOne(filter: DBObject) = collection.findOne(filter)
 
   protected def findAll(filter: DBObject): List[A] = collection.find(filter)
+
+  @inline protected final def whereQueryBuilder(f: (GdsFindQueryBuilder[A], A) => Unit) = GdsFindQueryBuilder(ModelProxyFactory.proxy[A]())
 
   @inline private final def update(query: DBObject, obj: DBObject, upsert: Boolean = true, multi: Boolean = false, writeConcern: WriteConcern) =
     collection.update(query, obj, upsert, multi, writeConcern)

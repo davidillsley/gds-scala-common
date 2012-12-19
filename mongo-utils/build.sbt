@@ -17,7 +17,10 @@ libraryDependencies ++= Seq(
         "org.apache.httpcomponents" % "httpclient" % "4.1.2",
         "jmimemagic" % "jmimemagic" % "0.1.1",
         "com.google.guava" % "guava" % "13.0",
-	    "com.google.code.findbugs" % "jsr305" % "1.3.+"
+	    "com.google.code.findbugs" % "jsr305" % "1.3.+",
+        "cglib" % "cglib-full" % "2.0.2",
+        "org.objenesis" % "objenesis" % "1.2",
+        "org.mockito" % "mockito-core" % "1.9.5" % "test"
     )
 
 parallelExecution in Test := false
