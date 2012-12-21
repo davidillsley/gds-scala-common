@@ -2,7 +2,7 @@ package uk.gov.gds.common.repository
 
 import org.scalatest.{GivenWhenThen, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
-import uk.gov.gds.common.mongo.repository.SimpleMongoRepository
+import uk.gov.gds.common.mongo.repository.{Foo, SimpleMongoRepository}
 import uk.gov.gds.common.mongo.TestMongoDatabase
 import org.scalatest.mock.MockitoSugar
 
@@ -28,9 +28,12 @@ class MongoQueryBuilderTest extends FunSuite with ShouldMatchers with GivenWhenT
 
     val result = repository.findOne {
       (query, schema) =>
+
         query
-          .eq(schema.name, "foo")
-          .eq(schema.value, 1)
+          .foo(schema.name, "foo")
+          .foo(schema.name, 1)
+//          .foo(schema.name, 1)
+//          .foo(schema.value, "foo")
     }
   }
 

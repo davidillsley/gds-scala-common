@@ -10,10 +10,9 @@ trait MongoQueryExecutor[A] {
   def getOne: A = findOne.get
 }
 
-
 case class GdsFindQueryBuilder[A <: CaseClass](schema: A) extends MongoQueryExecutor[A] {
 
-  def eq[B, B1 <: B](methodCall: B, value: B1) = {
+  def foo[B, B1](methodCall: B, value: B1)(implicit e: B =:= B1) = {
     // // //
     this
   }
