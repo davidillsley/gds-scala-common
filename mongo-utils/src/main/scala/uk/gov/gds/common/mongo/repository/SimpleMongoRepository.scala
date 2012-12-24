@@ -75,7 +75,7 @@ abstract class SimpleMongoRepository[A <: CaseClass](implicit m: Manifest[A]) ex
   protected def findAll(filter: DBObject): List[A] = collection.find(filter)
 
   @inline private final def whereQueryBuilder(f: FindQuery) = {
-    val queryBuilder = GdsFindQueryBuilder(ModelProxyFactory.proxy[A]())
+    val queryBuilder = GdsFindQueryBuilder(ModelProxyFactory.proxy[A])
     f(queryBuilder, queryBuilder.schema)
     queryBuilder
   }

@@ -2,17 +2,18 @@ package uk.gov.gds.common.repository
 
 import org.scalatest.{GivenWhenThen, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
-import uk.gov.gds.common.mongo.repository.{Foo, SimpleMongoRepository}
+import uk.gov.gds.common.mongo.repository.SimpleMongoRepository
 import uk.gov.gds.common.mongo.TestMongoDatabase
 import org.scalatest.mock.MockitoSugar
 
-case class ModelObject(name: String, value: Int = 1, unmodified: String = "unmodified")
+case class ModelObject(name: String,
+                       value: Int = 1,
+                       unmodified: String = "unmodified")
 
 class MongoQueryBuilderTest extends FunSuite with ShouldMatchers with GivenWhenThen with MockitoSugar {
 
   private val database = TestMongoDatabase(this.getClass)
   private val repository = new ModelObjectRepository
-
 
   class ModelObjectRepository extends SimpleMongoRepository[ModelObject] {
     protected val collection = database("updatequerytests")
@@ -31,12 +32,8 @@ class MongoQueryBuilderTest extends FunSuite with ShouldMatchers with GivenWhenT
 
         query
           .foo(schema.name, "foo")
-          .foo(schema.name, 1)
-//          .foo(schema.name, 1)
-//          .foo(schema.value, "foo")
     }
   }
-
 
 
 }
