@@ -24,29 +24,22 @@ object ModelProxyFactory extends Logging {
     private val proxyType = m.erasure.asInstanceOf[Class[A]]
     private lazy val queryBuilder = MongoDBObject()
 
-    val proxy: A = proxyType.cast(createProxy(createProxyClass(proxyType)))
+    lazy val proxy: A = {
+      val proxyClass = {
+        val enhancer = new Enhancer
 
-    private def createProxyClass(proxyType: Class[A], interfaces: List[Class[_]] = Nil) = {
-      val enhancer = new Enhancer
+        proxyType.getDeclaredConstructors.find(_.isAccessible == false).foreach(_.setAccessible(true))
+        enhancer.setClassLoader(proxyType.getClassLoader)
+        enhancer.setUseFactory(true)
+        enhancer.setSuperclass(proxyType)
+        enhancer.setCallbackTypes(Array(classOf[MethodInterceptor], classOf[NoOp]))
+        enhancer.setCallbackFilter(ignoreBridgeMethods)
+        enhancer.createClass
+      }
 
-      proxyType.getDeclaredConstructors.find(_.isAccessible == false).foreach(_.setAccessible(true))
-
-      enhancer.setClassLoader(proxyType.getClassLoader) // TODO: Will this always work in all contexts?
-      enhancer.setUseFactory(true)
-      enhancer.setSuperclass(proxyType)
-      enhancer.setCallbackTypes(Array(classOf[MethodInterceptor], classOf[NoOp]))
-      enhancer.setCallbackFilter(ignoreBridgeMethods)
-
-      if (interfaces != Nil)
-        enhancer.setInterfaces(interfaces.toArray)
-
-      enhancer.createClass
-    }
-
-    private def createProxy(proxyClass: Class[_]) = {
       val proxy = objenesis.newInstance(proxyClass)
       proxy.asInstanceOf[Factory].setCallbacks(Array(DefaultMethodInterceptor, SerializableNoOp))
-      proxy
+      proxyType.cast(proxy)
     }
 
     private object DefaultMethodInterceptor extends MethodInterceptor {
